@@ -1,0 +1,38 @@
+# graphql/schema.graphql
+type EasterEgg {
+  id: ID!
+  authorId: String!
+  description: String!
+  name: String!
+  latitude: Float!
+  longitude: Float!
+}
+
+input EasterEggInput {
+  id: ID!
+  authorId: String!
+  description: String!
+  name: String!
+  latitude: Float!
+  longitude: Float!
+}
+
+input UpdateEasterEggInput {
+  id: ID!
+  authorId: String!
+  description: String
+  name: String
+  latitude: Float
+  longitude: Float
+}
+
+type Query {
+  getEasterEggById(easterEggId: String!, authorId: String!): EasterEgg
+  listEasterEggs(authorId: String!): [EasterEgg]
+}
+
+type Mutation {
+  createEasterEgg(easterEgg: EasterEggInput!): EasterEgg
+  updateEasterEgg(easterEgg: UpdateEasterEggInput!): EasterEgg
+  deleteEasterEgg(easterEggId: String!, authorId: String!): String
+}
