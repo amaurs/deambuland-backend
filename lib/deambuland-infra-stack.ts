@@ -3,6 +3,7 @@ import * as amplify from "@aws-cdk/aws-amplify";
 import * as appsync from '@aws-cdk/aws-appsync';
 import * as ddb from '@aws-cdk/aws-dynamodb';
 import * as lambda from '@aws-cdk/aws-lambda';
+import * as cognito from '@aws-cdk/aws-cognito';
 
 export class DeambulandInfraStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -20,6 +21,19 @@ export class DeambulandInfraStack extends cdk.Stack {
     const masterBranch = amplifyApp.addBranch("main");
 
 
+
+    const userPool = new cognito.UserPool(this, "DeambulandUserPool", {
+        userPoolName: "DeambulandUserPool",
+        signInAliases: {
+            username: true,
+        },
+    });
+
+    const userPoolClient = new cognito.UserPoolClient(this, "DeambulandUserPoolClient", {
+        userPool
+    })
+
+
         // Creates the AppSync API
     const api = new appsync.GraphqlApi(this, 'DeambulandApi', {
       name: 'deambuland-api',
@@ -31,9 +45,23 @@ export class DeambulandInfraStack extends cdk.Stack {
             expires: cdk.Expiration.after(cdk.Duration.days(365))
           }
         },
+        additionalAuthorizationModes: [{
+          authorizationType: appsync.AuthorizationType.USER_POOL,
+          userPoolConfig: {
+            userPool,
+          }
+        }]
       },
       xrayEnabled: true,
     });
+
+
+        additionalAuthorizationModes: [{
+      authorizationType: appsync.AuthorizationType.USER_POOL,
+      userPoolConfig: {
+        userPool,
+      }
+    }]
 
     // Prints out the AppSync GraphQL endpoint to the terminal
     new cdk.CfnOutput(this, "GraphQLAPIURL", {
@@ -49,6 +77,22 @@ export class DeambulandInfraStack extends cdk.Stack {
     new cdk.CfnOutput(this, "Stack Region", {
       value: this.region
     });
+
+    new cdk.CfnOutput(this, "userPoolClientId", {
+      value: userPoolClient.userPoolClientId
+    });
+
+    new cdk.CfnOutput(this, "userPoolId", {
+      value: userPool.userPoolId
+    });
+
+    new cdk.CfnOutput(this, "userPoolProviderUrl", {
+      value: userPool.userPoolProviderUrl
+    });
+
+
+    
+
 
     // lib/appsync-cdk-app-stack.ts
     const deambulandLambda = new lambda.Function(this, 'DeambulandHandler', {
@@ -102,5 +146,8 @@ export class DeambulandInfraStack extends cdk.Stack {
 
     // Create an environment variable that we will use in the function code
     deambulandLambda.addEnvironment('EASTER_EGGS_TABLE', deambulandTable.tableName);
+
+
+
   }
 }
